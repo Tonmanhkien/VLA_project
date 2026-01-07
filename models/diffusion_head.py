@@ -147,12 +147,12 @@ class DiffusionPolicyHead(nn.Module):
             alpha_bar_t = self.alpha_bar[t_step]
 
             # now reverse diffusion  (aka DDPM)
-            # mean = (1 / torch.sqrt(alpha_t)) * (x_t - beta_t / torch.sqrt(1 - alpha_bar_t) * eps_pred) # original
-            x0_pred = (x_t - torch.sqrt(1 - alpha_bar_t) * eps_pred) / torch.sqrt(alpha_bar_t) # simplified
+            mean = (1 / torch.sqrt(alpha_t)) * (x_t - beta_t / torch.sqrt(1 - alpha_bar_t) * eps_pred) # original
+            # x0_pred = (x_t - torch.sqrt(1 - alpha_bar_t) * eps_pred) / torch.sqrt(alpha_bar_t) # simplified
             if t_step > 0:
                 noise = torch.randn_like(x_t)
-                # x_t = mean + torch.sqrt(beta_t) * noise # original
-                x_t = torch.sqrt(alpha_t) * x0_pred + torch.sqrt(beta_t) * noise
+                x_t = mean + torch.sqrt(beta_t) * noise # original
+                # x_t = torch.sqrt(alpha_t) * x0_pred + torch.sqrt(beta_t) * noise
             else:
-                x_t = x0_pred # x0_pred or mean
+                x_t = mean # x0_pred or mean
         return x_t

@@ -6,6 +6,7 @@ import argparse
 import numpy as np
 import torch
 import imageio.v2 as imageio
+import cv2
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 parent_dir = os.path.dirname(current_dir)
@@ -22,7 +23,7 @@ def parse_args():
     parser.add_argument(
         "--checkpoint",
         type=str,
-        default="checkpoints/model.pt",
+        default="checkpoints/model_spatial.pt",
         help="Path to trained VLA diffusion checkpoint",
     )
     parser.add_argument(
@@ -140,6 +141,8 @@ def main():
 
         done = False
         while not done and step < args.max_steps:
+            if (img.shape[0] != 64 or img.shape[1] != 64):
+                img = cv2.resize(img, (64, 64))
             img_t = torch.from_numpy(img).permute(2, 0, 1).float().unsqueeze(0) / 255.0  # (1, 3, H, W)
             state_t = torch.from_numpy(state).float().unsqueeze(0) # (1, state_dim)
 

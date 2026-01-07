@@ -49,12 +49,12 @@ def parse_args():
                         default="data/data.npz")
     parser.add_argument("--resize-to", type=int, default=64)
     parser.add_argument("--batch-size", type=int, default=64)
-    parser.add_argument("--epochs", type=int, default=50)
+    parser.add_argument("--epochs", type=int, default=15)
     parser.add_argument("--lr", type=float, default=1e-4)
     parser.add_argument("--d-model", type=int, default=128)
     parser.add_argument("--diffusion-T", type=int, default=16)
     parser.add_argument("--save-path", type=str,
-                        default="checkpoints/model.pt")
+                        default="checkpoints/model_spatial.pt")
     parser.add_argument("--device", type=str, default="cuda",
                         help="'cuda' or 'cpu'")
     return parser.parse_args()

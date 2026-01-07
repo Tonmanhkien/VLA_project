@@ -1,21 +1,38 @@
 import torch 
 import torch.nn as nn
 import torch.nn.functional as F
+from .spatial_softmax import SpatialSoftmax
 
 class ImageEncoder(nn.Module):
     def __init__(self, d_model=128):
         super().__init__()
-        self.conv1 = nn.Conv2d(3, 32, kernel_size=5, stride=2, padding=2)
-        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1)
-        self.conv3 = nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1)
-        self.proj = nn.Linear(128, d_model)
+        # Input: 64x64
+        self.conv1 = nn.Conv2d(3, 32, kernel_size=5, stride=2, padding=2) # -> 32x32
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=3, stride=2, padding=1) # -> 16x16
+        self.conv3 = nn.Conv2d(64, 64, kernel_size=3, stride=2, padding=1) # -> 8x8 (Giảm channel chút cho nhẹ)
+        
+        # Spatial Softmax thay cho Global Average Pooling
+        # Input feature map cuối cùng kích thước 8x8 (nếu ảnh gốc 64x64)
+        self.spatial_softmax = SpatialSoftmax(num_rows=8, num_cols=8)
+        
+        # Sau Spatial Softmax, output dimension là Channel * 2 (tọa độ x, y cho mỗi channel)
+        # Conv3 có 64 channel -> 64 * 2 = 128 features
+        self.flatten_dim = 64 * 2 
+        
+        self.proj = nn.Linear(self.flatten_dim, d_model)
         self.ln = nn.LayerNorm(d_model)
 
     def forward(self, x):
+        # x: (B, 3, 64, 64)
         x = F.relu(self.conv1(x))
         x = F.relu(self.conv2(x))
-        x = F.relu(self.conv3(x))
-        x = x.mean(dim=[2, 3])  # Global average pooling (reduce overfiting when training data is small)
+        x = F.relu(self.conv3(x)) # (B, 64, 8, 8)
+        
+        # --- PHẦN QUAN TRỌNG NHẤT ---
+        # Thay vì x.mean(), ta dùng Spatial Softmax
+        x = self.spatial_softmax(x) # (B, 128) - Chứa tọa độ không gian
+        # -----------------------------
+        
         x = self.proj(x)
         x = self.ln(x)
         return x  # (B, d_model)
